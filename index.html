@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>卡牌对战桌游 - 创意工坊 v3</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI','Microsoft YaHei',sans-serif;background:#1a1a2e;color:#e0d6c2;min-height:100vh}
+header{background:#16213e;border-bottom:2px solid #c9a84c;padding:16px 24px;display:flex;align-items:center;gap:16px}
+header h1{font-size:1.5em;color:#c9a84c;letter-spacing:2px}
+header .sub{color:#8a8a9a;font-size:0.85em}
+nav{display:flex;gap:4px;background:#16213e;padding:0 24px;border-bottom:1px solid #2a2a4a;overflow-x:auto}
+nav button{padding:12px 20px;background:none;border:none;color:#8a8a9a;cursor:pointer;font-size:0.95em;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap}
+nav button:hover{color:#c9a84c}
+nav button.active{color:#c9a84c;border-bottom-color:#c9a84c}
+main{padding:24px;max-width:1200px;margin:0 auto}
+.tab{display:none}
+.tab.active{display:block}
+h2{color:#c9a84c;margin-bottom:20px;font-size:1.2em;display:flex;align-items:center;gap:10px}
+h2::before{content:'';display:inline-block;width:4px;height:20px;background:#c9a84c;border-radius:2px}
+.btn{background:#c9a84c;color:#1a1a2e;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:0.9em;font-weight:600;transition:all .2s}
+.btn:hover{background:#dbb95c}
+.btn-sm{padding:5px 12px;font-size:0.8em}
+.btn-outline{background:transparent;border:1px solid #c9a84c;color:#c9a84c}
+.btn-outline:hover{background:#c9a84c20}
+.btn-danger{background:#8b3a3a;color:#e0d6c2}
+.btn-danger:hover{background:#a04545}
+.btn-success{background:#2d8a4e;color:#e0d6c2}
+.btn-success:hover{background:#37a05e}
+.input-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+input,select,textarea{background:#1e1e3a;border:1px solid #3a3a5a;color:#e0d6c2;padding:8px 12px;border-radius:6px;font-size:0.9em;font-family:inherit}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#c9a84c}
+input[type=number]{width:80px}
+textarea{resize:vertical;min-height:60px;width:100%}
+.field{margin-bottom:12px}
+.field label{display:block;margin-bottom:4px;color:#8a8a9a;font-size:0.85em}
+.field .hint{font-size:0.75em;color:#5a5a7a;margin-top:2px}
+.field input,.field select,.field textarea{width:100%}
+.field input[type=number]{width:100%}
+.stats-row{display:flex;gap:12px}
+.stats-row .field{flex:1}
+.list-item{background:#1e1e3a;border:1px solid #2a2a4a;border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;transition:all .2s}
+.list-item:hover{border-color:#c9a84c40}
+.list-item .info strong{display:block;margin-bottom:4px}
+.list-item .info span{font-size:0.8em;color:#6a6a8a}
+.list-item .actions{display:flex;gap:6px}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.75em;font-weight:600}
+.badge-combat{background:#c9a84c20;color:#c9a84c;border:1px solid #c9a84c40}
+.badge-lord{background:#9b59b620;color:#9b59b6;border:1px solid #9b59b640}
+.badge-level{background:#e67e2220;color:#e67e22;border:1px solid #e67e2240}
+.badge-cp{background:#3498db20;color:#3498db;border:1px solid #3498db40}
+.badge-normal{background:#5a5a7a20;color:#5a5a7a;border:1px solid #5a5a7a40}
+.empty-state{text-align:center;padding:40px;color:#5a5a7a}
+.empty-state .icon{font-size:2.5em;margin-bottom:12px}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card-preview{background:#1e1e3a;border:1px solid #2a2a4a;border-radius:8px;padding:16px;cursor:pointer;transition:all .2s;position:relative;min-height:120px}
+.card-preview:hover{border-color:#c9a84c;transform:translateY(-2px)}
+.card-preview.lord{border-color:#9b59b640;background:linear-gradient(135deg,#1e1e3a 0%,#2a1a3a 100%)}
+.card-preview .card-actions{position:absolute;top:8px;right:8px;display:flex;gap:4px;opacity:0;transition:opacity .2s;z-index:2}
+.card-preview:hover .card-actions{opacity:1}
+.card-preview .card-name{font-size:1.1em;font-weight:700;margin-bottom:6px;padding-right:60px;display:flex;align-items:center;gap:8px}
+.card-preview .card-type{color:#c9a84c;font-size:0.8em;margin-bottom:4px}
+.card-preview .card-faction{color:#6a6a8a;font-size:0.8em;margin-bottom:8px}
+.card-stats{display:flex;gap:8px;margin:8px 0}
+.card-stats .stat{flex:1;text-align:center;background:#16213e;border-radius:6px;padding:6px 4px}
+.card-stats .stat .label{display:block;font-size:0.7em;color:#6a6a8a}
+.card-stats .stat .value{font-size:1.2em;font-weight:700;color:#e0d6c2}
+.card-stats .stat.atk .value{color:#e74c3c}
+.card-stats .stat.hp .value{color:#2ecc71}
+.card-stats .stat.def .value{color:#3498db}
+.card-stats .stat.level .value{color:#e67e22}
+.card-stats .stat.cp .value{color:#3498db;font-size:1.1em}
+.card-keywords{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
+.card-keywords .kw{display:inline-block;padding:2px 8px;background:#c9a84c15;border:1px solid #c9a84c30;border-radius:10px;font-size:0.75em;color:#c9a84c;white-space:nowrap}
+.card-desc{color:#6a6a8a;font-size:0.8em;line-height:1.5;margin-top:6px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.filters select,.filters input{width:auto;min-width:140px}
+.export-bar{display:flex;gap:8px;align-items:center;margin-top:20px;padding-top:16px;border-top:1px solid #2a2a4a;flex-wrap:wrap}
+.export-bar .btn-group{display:flex;gap:4px}
+.modal-overlay{position:fixed;inset:0;background:#000000cc;display:flex;align-items:center;justify-content:center;z-index:100;animation:fadeIn .2s}
+.modal{background:#1a1a2e;border:1px solid #3a3a5a;border-radius:12px;padding:24px;width:94%;max-width:520px;max-height:90vh;overflow-y:auto;animation:slideUp .25s}
+.modal h3{color:#c9a84c;margin-bottom:16px;font-size:1.1em}
+.modal .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:200;display:flex;flex-direction:column;gap:8px}
+.toast{background:#2a2a4a;color:#e0d6c2;padding:10px 18px;border-radius:8px;font-size:0.9em;animation:slideIn .3s ease;max-width:320px;box-shadow:0 4px 16px #00000040}
+.toast.error{background:#8b3a3a;border-left:3px solid #e74c3c}
+.level-stars{color:#e67e22;font-size:0.9em;letter-spacing:1px}
+.help-tip{font-size:0.75em;color:#6a6a8a;margin-top:4px;font-style:italic}
+
+/* Sync styles */
+.sync-card{background:#1e1e3a;border:1px solid #2a2a4a;border-radius:10px;padding:20px;margin-bottom:16px}
+.sync-card h3{margin-bottom:12px;color:#c9a84c;font-size:1em}
+.sync-status{padding:10px 14px;border-radius:6px;margin-top:12px;font-size:0.85em}
+.sync-status.success{background:#2d8a4e20;border:1px solid #2d8a4e40;color:#37a05e}
+.sync-status.error{background:#8b3a3a20;border:1px solid #8b3a3a40;color:#e74c3c}
+.sync-status.info{background:#3498db20;border:1px solid #3498db40;color:#3498db}
+.sync-status.loading{background:#c9a84c20;border:1px solid #c9a84c40;color:#c9a84c}
+.token-masked{font-family:monospace;color:#6a6a8a;font-size:0.85em}
+.sync-buttons{display:flex;gap:8px;flex-wrap:wrap}
+.protocol-warning{background:#e67e2220;border:1px solid #e67e2240;border-radius:8px;padding:14px 18px;margin-bottom:16px;color:#e67e22;font-size:0.85em;line-height:1.6}
+.protocol-warning code{background:#16213e;padding:2px 6px;border-radius:4px;font-size:0.95em}
+.server-info{background:#2d8a4e20;border:1px solid #2d8a4e40;border-radius:8px;padding:14px 18px;margin-bottom:16px;color:#37a05e;font-size:0.85em;line-height:1.6}
+.server-info code{background:#16213e;padding:2px 6px;border-radius:4px;font-size:0.95em}
+
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid #c9a84c40;border-top-color:#c9a84c;border-radius:50%;animation:spin .6s linear infinite;margin-right:6px;vertical-align:middle}
+@media(max-width:640px){
+  .card-grid{grid-template-columns:1fr}
+  .filters{flex-direction:column}
+  .filters select,.filters input{width:100%}
+  header{padding:12px 16px}
+  main{padding:12px}
+  .sync-buttons{flex-direction:column}
+  .sync-buttons .btn{width:100%}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>&#9876; 卡牌对战桌游</h1>
+  <span class="sub">创意工坊 v3 &mdash; 双端云同步</span>
+</header>
+<nav>
+  <button data-tab="factions" class="active" onclick="switchTab('factions')">&#127984; 阵营</button>
+  <button data-tab="types" onclick="switchTab('types')">&#128203; 卡牌类型</button>
+  <button data-tab="cards" onclick="switchTab('cards')">&#127149; 创意工坊</button>
+  <button data-tab="sync" onclick="switchTab('sync')">&#9729; 云同步</button>
+</nav>
+<main>
+  <div id="tab-factions" class="tab active">
+    <h2>阵营管理</h2>
+    <div class="input-row">
+      <input id="faction-input" placeholder="新阵营名称..." style="flex:1">
+      <button class="btn" onclick="addFaction()">+ 添加</button>
+    </div>
+    <div id="faction-list"></div>
+  </div>
+  <div id="tab-types" class="tab">
+    <h2>卡牌类型管理</h2>
+    <div class="help-tip">&#9733; 战斗单位：含攻击/生命/等级  &middot; 领主：含生命/防御/魔力值  &middot; 普通：仅描述和关键词</div>
+    <div class="input-row">
+      <input id="type-input" placeholder="类型名称..." style="flex:1">
+      <select id="type-category">
+        <option value="normal">&#128196; 普通卡牌</option>
+        <option value="combat">&#128165; 战斗单位 (攻/生/等级)</option>
+        <option value="lord">&#128081; 领主 (生命/防御/魔力值)</option>
+      </select>
+      <button class="btn" onclick="addType()">+ 添加</button>
+    </div>
+    <div id="type-list"></div>
+  </div>
+  <div id="tab-cards" class="tab">
+    <h2>创意工坊</h2>
+    <div class="filters">
+      <select id="filter-faction" onchange="renderCards()"><option value="">全部阵营</option></select>
+      <select id="filter-type" onchange="renderCards()"><option value="">全部类型</option></select>
+      <input id="filter-search" placeholder="&#128269; 搜索卡牌名称..." oninput="renderCards()">
+      <button class="btn" onclick="openCardModal()">+ 新建卡牌</button>
+    </div>
+    <div id="card-grid" class="card-grid"></div>
+    <div class="export-bar">
+      <button class="btn btn-outline btn-sm" onclick="exportData()">&#128230; 导出数据</button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('import-file').click()">&#128229; 导入数据</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+      <span style="color:#5a5a7a;font-size:0.8em;margin-left:auto">&#9617;&#9618; 数据自动保存在浏览器本地</span>
+    </div>
+  </div>
+  <div id="tab-sync" class="tab">
+    <h2>云端同步</h2>
+    <div id="sync-protocol-warning"></div>
+
+    <div class="sync-card">
+      <h3>&#128273; GitHub Token 设置</h3>
+      <div class="field">
+        <label>Personal Access Token</label>
+        <input id="sync-token" type="password" placeholder="粘贴 GitHub Token (github_pat_...)" onchange="saveToken()">
+        <div class="hint">Token 仅保存在浏览器本地，不会上传到任何服务器。需要 <code>gist</code> 权限。</div>
+      </div>
+      <div id="token-status" style="margin-top:8px"></div>
+    </div>
+
+    <div class="sync-card">
+      <h3>&#9729; 同步操作</h3>
+      <div class="sync-buttons">
+        <button class="btn btn-success" onclick="syncToCloud()" id="btn-upload" disabled>&#128228; 上传到云端</button>
+        <button class="btn" onclick="syncFromCloud()" id="btn-download">&#128229; 从云端下载</button>
+      </div>
+      <div class="hint" style="margin-top:8px">
+        &#9432; 上传会覆盖云端数据。下载会覆盖本地数据（请先备份）。
+      </div>
+      <div id="sync-result"></div>
+    </div>
+
+    <div class="sync-card" id="sync-info-card" style="display:none">
+      <h3>&#128337; 同步信息</h3>
+      <div id="sync-info"></div>
+    </div>
+  </div>
+</main>
+<div id="modal-container"></div>
+<div id="toast-container"></div>
+
+<script>
+var STORAGE_KEY = 'cardgame_data_v3';
+var GIST_ID = 'fd8b0ddd1a2d003457d9a38098399bd0';
+var GIST_RAW_URL = 'https://gist.githubusercontent.com/lyq709800433-blip/' + GIST_ID + '/raw/data.json';
+var GIST_API_URL = 'https://api.github.com/gists/' + GIST_ID;
+var data = { factions: [], cardTypes: [], cards: [] };
+var editCardId = null;
+var isFileProtocol = location.protocol === 'file:';
+
+function load() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      raw = localStorage.getItem('cardgame_data_v2');
+      if (raw) { localStorage.setItem(STORAGE_KEY, raw); }
+    }
+    if (raw) data = JSON.parse(raw);
+    if (!data.factions) data.factions = [];
+    if (!data.cardTypes) data.cardTypes = [];
+    if (!data.cards) data.cards = [];
+    if (data.cardTypes) {
+      for (var i = 0; i < data.cardTypes.length; i++) {
+        var t = data.cardTypes[i];
+        if (!t.category) { t.category = t.isCombat ? 'combat' : 'normal'; delete t.isCombat; }
+      }
+    }
+    if (data.cards) {
+      for (var j = 0; j < data.cards.length; j++) {
+        var c = data.cards[j];
+        if (!c.keywords) c.keywords = '';
+        if (c.defense === undefined) c.defense = 0;
+        if (c.level === undefined) c.level = 1;
+        if (c.cp === undefined) c.cp = 0;
+      }
+    }
+    save();
+  } catch(e) { data = { factions: [], cardTypes: [], cards: [] }; }
+}
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function toast(msg, isErr) {
+  var el = document.createElement('div');
+  el.className = 'toast' + (isErr ? ' error' : '');
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(function() { el.remove(); }, 2500);
+}
+
+// === Protocol detection ===
+function checkProtocol() {
+  var warning = document.getElementById('sync-protocol-warning');
+  if (isFileProtocol) {
+    warning.innerHTML =
+      '<div class="protocol-warning">' +
+      '&#9888; <strong>当前以 file:// 协议打开，无法使用云同步。</strong><br>' +
+      '请在终端运行以下命令启动本地服务器：<br>' +
+      '双击运行 <code>start-server.bat</code> 即可启动服务器<br>' +
+      '然后浏览器打开 <code>http://localhost:8765/card-workshop.html</code>' +
+      '</div>';
+    document.getElementById('btn-upload').disabled = true;
+    document.getElementById('btn-download').disabled = true;
+  } else {
+    warning.innerHTML =
+      '<div class="server-info">' +
+      '&#9989; HTTP 模式已启用，云同步可用。<br>' +
+      '当前地址：<code>' + location.href + '</code>' +
+      '</div>';
+    checkToken();
+  }
+}
+
+// === Sync ===
+function getToken() { return localStorage.getItem('gist_token') || ''; }
+function saveToken() {
+  var t = document.getElementById('sync-token').value.trim();
+  if (t) localStorage.setItem('gist_token', t);
+  else localStorage.removeItem('gist_token');
+  checkToken();
+}
+function checkToken() {
+  var token = getToken();
+  var status = document.getElementById('token-status');
+  var upBtn = document.getElementById('btn-upload');
+  var inp = document.getElementById('sync-token');
+  if (token) {
+    if (!inp.value) inp.value = token;
+    var masked = token.slice(0, 15) + '...' + token.slice(-8);
+    status.innerHTML = '<div class="sync-status success">&#9989; Token 已设置：<span class="token-masked">' + masked + '</span> <button class="btn btn-outline btn-sm" onclick="clearToken()" style="margin-left:8px">&#10005; 清除</button></div>';
+    upBtn.disabled = false;
+  } else {
+    status.innerHTML = '<div class="sync-status info">&#9888; 尚未设置 Token，请粘贴上方输入框</div>';
+    upBtn.disabled = true;
+  }
+}
+function clearToken() {
+  localStorage.removeItem('gist_token');
+  document.getElementById('sync-token').value = '';
+  checkToken();
+}
+
+function syncToCloud() {
+  var token = getToken();
+  if (!token) return toast('请先设置 GitHub Token', true);
+  var result = document.getElementById('sync-result');
+  result.innerHTML = '<div class="sync-status loading"><span class="spinner"></span>正在上传到云端...</div>';
+
+  fetch(GIST_API_URL, {
+    method: 'PATCH',
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'Accept': 'application/vnd.github+json',
+      'Content-Type': 'application/json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    },
+    body: JSON.stringify({
+      files: { 'data.json': { content: JSON.stringify({ factions: data.factions, cardTypes: data.cardTypes, cards: data.cards }) } }
+    })
+  }).then(function(r) {
+    return r.json().then(function(j) { return { status: r.status, json: j }; });
+  }).then(function(r) {
+    if (r.status >= 200 && r.status < 300) {
+      var now = new Date().toLocaleString('zh-CN');
+      localStorage.setItem('gist_last_sync', now);
+      updateSyncInfo();
+      result.innerHTML = '<div class="sync-status success">&#9989; 上传成功！' + now + '</div>';
+      toast('&#9729; 数据已同步到云端');
+    } else {
+      result.innerHTML = '<div class="sync-status error">&#10060; 上传失败 (HTTP ' + r.status + '): ' + (r.json.message || '未知错误') + '</div>';
+    }
+  }).catch(function(e) {
+    result.innerHTML = '<div class="sync-status error">&#10060; 网络错误: ' + e.message + '</div>';
+    if (e.message.indexOf('Failed to fetch') !== -1) {
+      result.innerHTML += '<div class="hint" style="margin-top:4px">可能是 CORS 限制，请确保通过 http://localhost 访问</div>';
+    }
+  });
+}
+
+function syncFromCloud() {
+  var result = document.getElementById('sync-result');
+  result.innerHTML = '<div class="sync-status loading"><span class="spinner"></span>正在从云端下载...</div>';
+
+  fetch(GIST_RAW_URL + '?t=' + Date.now(), { cache: 'no-store' })
+    .then(function(r) { return r.json(); })
+    .then(function(cloud) {
+      if (!cloud.factions || !cloud.cardTypes || !cloud.cards) {
+        result.innerHTML = '<div class="sync-status error">&#10060; 云端数据格式不正确</div>';
+        return;
+      }
+      if (!confirm(
+        '&#9729; 从云端下载数据将覆盖本地数据。\n\n' +
+        '云端数据：' + (cloud.factions||[]).length + ' 阵营 &middot; ' + (cloud.cardTypes||[]).length + ' 类型 &middot; ' + (cloud.cards||[]).length + ' 卡牌\n' +
+        '本地数据：' + data.factions.length + ' 阵营 &middot; ' + data.cardTypes.length + ' 类型 &middot; ' + data.cards.length + ' 卡牌\n\n' +
+        '确认覆盖？'
+      )) {
+        result.innerHTML = '';
+        return;
+      }
+      data.factions = cloud.factions || [];
+      data.cardTypes = cloud.cardTypes || [];
+      data.cards = cloud.cards || [];
+      save();
+      renderFactions(); renderTypes(); renderCards(); refreshFilters();
+      var now = new Date().toLocaleString('zh-CN');
+      localStorage.setItem('gist_last_sync', now);
+      updateSyncInfo();
+      result.innerHTML = '<div class="sync-status success">&#9989; 下载成功！' + now + ' | ' + data.factions.length + '阵营 ' + data.cardTypes.length + '类型 ' + data.cards.length + '卡牌</div>';
+      toast('&#9729; 数据已从云端同步');
+    }).catch(function(e) {
+      result.innerHTML = '<div class="sync-status error">&#10060; 下载失败: ' + e.message + '</div>';
+    });
+}
+
+function updateSyncInfo() {
+  var lastSync = localStorage.getItem('gist_last_sync');
+  var card = document.getElementById('sync-info-card');
+  var info = document.getElementById('sync-info');
+  if (lastSync) {
+    card.style.display = '';
+    info.innerHTML =
+      '<p>&#128197; 上次同步：<strong>' + lastSync + '</strong></p>' +
+      '<p>&#127149; 本地卡牌：' + data.cards.length + ' 张</p>' +
+      '<p>&#128279; <a href="https://gist.github.com/lyq709800433-blip/' + GIST_ID + '" target="_blank" style="color:#c9a84c">查看云端 Gist &#8599;</a></p>';
+  } else {
+    card.style.display = 'none';
+  }
+}
+
+// === Factions ===
+function renderFactions() {
+  var list = document.getElementById('faction-list');
+  if (!data.factions.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">&#127984;</div><p>还没有阵营，创建一个吧</p></div>';
+    return;
+  }
+  list.innerHTML = data.factions.map(function(f) {
+    return '<div class="list-item">' +
+      '<div class="info"><strong>' + esc(f.name) + '</strong><span>' + getFactionCardCount(f.id) + ' 张卡牌</span></div>' +
+      '<div class="actions">' +
+        '<button class="btn btn-outline btn-sm" onclick="renameFaction(\'' + f.id + '\')">&#9998; 重命名</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="deleteFaction(\'' + f.id + '\')">&#128465; 删除</button>' +
+      '</div></div>';
+  }).join('');
+}
+function addFaction() {
+  var inp = document.getElementById('faction-input');
+  var name = inp.value.trim();
+  if (!name) return toast('请输入阵营名称', true);
+  if (data.factions.some(function(f) { return f.name === name; })) return toast('阵营名称已存在', true);
+  data.factions.push({ id: uid(), name: name });
+  save(); inp.value = ''; renderFactions(); refreshFilters();
+  toast('&#127984; 阵营「' + name + '」已添加');
+}
+function renameFaction(id) {
+  var f = data.factions.find(function(x) { return x.id === id; });
+  if (!f) return;
+  var name = prompt('修改阵营名称：', f.name);
+  if (!name || !name.trim()) return;
+  if (data.factions.some(function(x) { return x.name === name.trim() && x.id !== id; })) return toast('阵营名称已存在', true);
+  f.name = name.trim();
+  save(); renderFactions(); refreshFilters(); renderCards();
+  toast('阵营已更新');
+}
+function deleteFaction(id) {
+  var f = data.factions.find(function(x) { return x.id === id; });
+  if (!f) return;
+  if (!confirm('删除阵营「' + f.name + '」？该阵营下的卡牌不会删除，但会失去阵营归属。')) return;
+  data.factions = data.factions.filter(function(x) { return x.id !== id; });
+  save(); renderFactions(); refreshFilters(); renderCards();
+  toast('阵营已删除');
+}
+function getFactionCardCount(fid) { return data.cards.filter(function(c) { return c.factionId === fid; }).length; }
+
+// === Card Types ===
+function renderTypes() {
+  var list = document.getElementById('type-list');
+  if (!data.cardTypes.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">&#128203;</div><p>还没有卡牌类型，创建几个吧</p></div>';
+    return;
+  }
+  list.innerHTML = data.cardTypes.map(function(t) {
+    var catLabel = '';
+    if (t.category === 'combat') catLabel = '<span class="badge badge-combat">&#128165; 战斗单位</span>';
+    else if (t.category === 'lord') catLabel = '<span class="badge badge-lord">&#128081; 领主</span>';
+    else catLabel = '<span class="badge badge-normal">&#128196; 普通</span>';
+    return '<div class="list-item">' +
+      '<div class="info"><strong>' + esc(t.name) + '</strong><span>' + catLabel + ' &middot; ' + getTypeCardCount(t.id) + ' 张卡牌</span></div>' +
+      '<div class="actions">' +
+        '<button class="btn btn-outline btn-sm" onclick="editType(\'' + t.id + '\')">&#9998;</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="deleteType(\'' + t.id + '\')">&#128465;</button>' +
+      '</div></div>';
+  }).join('');
+}
+function addType() {
+  var inp = document.getElementById('type-input');
+  var name = inp.value.trim();
+  var cat = document.getElementById('type-category').value;
+  if (!name) return toast('请输入类型名称', true);
+  if (data.cardTypes.some(function(t) { return t.name === name; })) return toast('类型名称已存在', true);
+  data.cardTypes.push({ id: uid(), name: name, category: cat });
+  save(); inp.value = ''; renderTypes(); refreshFilters();
+  toast('类型「' + name + '」已添加');
+}
+function editType(id) {
+  var t = data.cardTypes.find(function(x) { return x.id === id; });
+  if (!t) return;
+  var name = prompt('修改类型名称：', t.name);
+  if (!name || !name.trim()) return;
+  if (data.cardTypes.some(function(x) { return x.name === name.trim() && x.id !== id; })) return toast('类型名称已存在', true);
+  t.name = name.trim();
+  var catSel = prompt('修改卡牌类别：\nnormal=普通 | combat=战斗单位 | lord=领主', t.category || 'normal');
+  if (catSel && (catSel === 'normal' || catSel === 'combat' || catSel === 'lord')) t.category = catSel;
+  save(); renderTypes(); refreshFilters(); renderCards();
+  toast('类型已更新');
+}
+function deleteType(id) {
+  var t = data.cardTypes.find(function(x) { return x.id === id; });
+  if (!t) return;
+  if (!confirm('删除类型「' + t.name + '」？该类型下的卡牌不会删除，但会失去类型归属。')) return;
+  data.cardTypes = data.cardTypes.filter(function(x) { return x.id !== id; });
+  save(); renderTypes(); refreshFilters(); renderCards();
+  toast('类型已删除');
+}
+function getTypeCardCount(tid) { return data.cards.filter(function(c) { return c.typeId === tid; }).length; }
+
+// === Cards ===
+function renderCards() {
+  var grid = document.getElementById('card-grid');
+  var cards = data.cards.slice();
+  var ff = document.getElementById('filter-faction').value;
+  var ft = document.getElementById('filter-type').value;
+  var fs = document.getElementById('filter-search').value.toLowerCase();
+  if (ff) cards = cards.filter(function(c) { return c.factionId === ff; });
+  if (ft) cards = cards.filter(function(c) { return c.typeId === ft; });
+  if (fs) cards = cards.filter(function(c) { return c.name.toLowerCase().indexOf(fs) !== -1; });
+  cards.sort(function(a,b) {
+    var ta = getCardCategory(a);
+    var tb = getCardCategory(b);
+    var order = {lord:0, combat:1, normal:2};
+    return (order[ta]||0) - (order[tb]||0);
+  });
+  if (!cards.length) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="icon">&#127149;</div><p>还没有符合条件的卡牌</p></div>';
+    return;
+  }
+  grid.innerHTML = cards.map(function(c) {
+    var faction = data.factions.find(function(f) { return f.id === c.factionId; });
+    var type = data.cardTypes.find(function(t) { return t.id === c.typeId; });
+    var cat = type ? (type.category || 'normal') : 'normal';
+    var isLord = cat === 'lord';
+    var isCombat = cat === 'combat';
+
+    var statsHtml = '';
+    if (isCombat) {
+      var levelStars = '';
+      var lv = c.level || 1;
+      for (var s = 0; s < Math.min(lv, 5); s++) levelStars += '&#9733;';
+      statsHtml = '<div class="card-stats">' +
+        '<div class="stat atk"><span class="label">&#9876; 攻击</span><span class="value">' + (c.attack || 0) + '</span></div>' +
+        '<div class="stat hp"><span class="label">&#10084; 生命</span><span class="value">' + (c.hp || 0) + '</span></div>' +
+        '<div class="stat level"><span class="label">&#11088; 等级</span><span class="value">' + levelStars + '</span></div>' +
+        '</div>';
+    } else if (isLord) {
+      statsHtml = '<div class="card-stats">' +
+        '<div class="stat hp"><span class="label">&#10084; 生命</span><span class="value">' + (c.hp || 0) + '</span></div>' +
+        '<div class="stat def"><span class="label">&#128737; 防御</span><span class="value">' + (c.defense || 0) + '</span></div>' +
+        '<div class="stat cp"><span class="label">&#10024; 魔力值</span><span class="value">CP+' + (c.cp || 0) + '</span></div>' +
+        '</div>';
+    }
+
+    var kwHtml = '';
+    if (c.keywords && c.keywords.trim()) {
+      kwHtml = '<div class="card-keywords">' +
+        c.keywords.split(/[,;，；、\s]+/).filter(function(k) { return k; }).map(function(k) {
+          return '<span class="kw">' + esc(k) + '</span>';
+        }).join('') + '</div>';
+    }
+
+    var badges = '';
+    if (isCombat && (c.level || 1) >= 3) badges = '<span class="badge badge-level" style="margin-left:4px">Lv.' + (c.level||1) + '</span>';
+    else if (isLord && (c.cp||0) > 0) badges = '<span class="badge badge-cp" style="margin-left:4px">CP+' + (c.cp||0) + '</span>';
+
+    return '<div class="card-preview' + (isLord ? ' lord' : '') + '" onclick="openCardModal(\'' + c.id + '\')">' +
+      '<div class="card-actions">' +
+        '<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openCardModal(\'' + c.id + '\')">&#9998;</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCard(\'' + c.id + '\')">&#128465;</button>' +
+      '</div>' +
+      '<div class="card-name">' + esc(c.name) + badges + '</div>' +
+      '<div class="card-type">' + (type ? esc(type.name) : '未知') + '</div>' +
+      '<div class="card-faction">&#127984; ' + (faction ? esc(faction.name) : '无阵营') + '</div>' +
+      statsHtml +
+      kwHtml +
+      '<div class="card-desc">' + esc(c.desc || '（无描述）') + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+function getCardCategory(card) {
+  var type = data.cardTypes.find(function(t) { return t.id === card.typeId; });
+  return type ? (type.category || 'normal') : 'normal';
+}
+
+function openCardModal(id) {
+  editCardId = id || null;
+  var card = id ? data.cards.find(function(c) { return c.id === id; }) : null;
+  var factionOpts = data.factions.map(function(f) {
+    return '<option value="' + f.id + '"' + (card && card.factionId === f.id ? ' selected' : '') + '>' + esc(f.name) + '</option>';
+  }).join('');
+  var typeOpts = data.cardTypes.map(function(t) {
+    var emoji = '';
+    if (t.category === 'combat') emoji = ' &#9876;';
+    else if (t.category === 'lord') emoji = ' &#128081;';
+    return '<option value="' + t.id + '"' + (card && card.typeId === t.id ? ' selected' : '') + '>' + esc(t.name) + emoji + '</option>';
+  }).join('');
+  document.getElementById('modal-container').innerHTML =
+    '<div class="modal-overlay" onclick="if(event.target===this)closeModal()">' +
+    '<div class="modal">' +
+      '<h3>' + (card ? '&#9998; 编辑卡牌' : '&#10024; 新建卡牌') + '</h3>' +
+      '<div class="field"><label>&#128219; 卡牌名称 *</label><input id="card-name" value="' + (card ? escAttr(card.name) : '') + '" placeholder="输入卡牌名称..."></div>' +
+      '<div class="field"><label>&#127984; 阵营</label><select id="card-faction"><option value="">无阵营</option>' + factionOpts + '</select></div>' +
+      '<div class="field"><label>&#128194; 卡牌类型 *</label><select id="card-type" onchange="onTypeChange()"><option value="">&mdash; 选择类型 &mdash;</option>' + typeOpts + '</select></div>' +
+      '<div id="card-stats-area"></div>' +
+      '<div class="field"><label>&#127991; 关键词</label><input id="card-keywords" placeholder="用逗号、分号或空格分隔，如：圣盾,连击,飞行" value="' + (card ? escAttr(card.keywords || '') : '') + '">' +
+        '<div class="hint">支持多个关键词，自定义添加</div></div>' +
+      '<div class="field"><label>&#128221; 卡牌描述</label><textarea id="card-desc" placeholder="输入卡牌效果描述...">' + (card ? escAttr(card.desc || '') : '') + '</textarea></div>' +
+      '<div class="actions">' +
+        '<button class="btn btn-outline" onclick="closeModal()">取消</button>' +
+        '<button class="btn btn-success" onclick="saveCard()">' + (card ? '&#9989; 保存修改' : '&#10024; 创建卡牌') + '</button>' +
+      '</div>' +
+    '</div></div>';
+  onTypeChange();
+}
+
+function onTypeChange() {
+  var tid = document.getElementById('card-type').value;
+  var t = data.cardTypes.find(function(x) { return x.id === tid; });
+  var card = editCardId ? data.cards.find(function(c) { return c.id === editCardId; }) : null;
+  var area = document.getElementById('card-stats-area');
+  if (!t) { area.innerHTML = ''; return; }
+  if (t.category === 'combat') {
+    area.innerHTML = '<div class="stats-row">' +
+      '<div class="field"><label>&#9876; 攻击力</label><input id="card-attack" type="number" min="0" value="' + (card ? (card.attack || 0) : 0) + '"></div>' +
+      '<div class="field"><label>&#10084; 生命值</label><input id="card-hp" type="number" min="1" value="' + (card ? (card.hp || 1) : 1) + '"></div>' +
+      '<div class="field"><label>&#11088; 等级</label><input id="card-level" type="number" min="1" max="10" value="' + (card ? (card.level || 1) : 1) + '">' +
+        '<div class="hint">Lv3+ 可能需要素材召唤</div></div>' +
+      '</div>';
+  } else if (t.category === 'lord') {
+    area.innerHTML = '<div class="stats-row">' +
+      '<div class="field"><label>&#10084; 生命值</label><input id="card-hp" type="number" min="1" value="' + (card ? (card.hp || 1) : 1) + '"></div>' +
+      '<div class="field"><label>&#128737; 防御值</label><input id="card-defense" type="number" min="0" value="' + (card ? (card.defense || 0) : 0) + '"></div>' +
+      '<div class="field"><label>&#10024; 魔力值(CP)</label><input id="card-cp" type="number" min="0" max="10" value="' + (card ? (card.cp || 0) : 0) + '">' +
+        '<div class="hint">每回合生成的指挥点数</div></div>' +
+      '</div>';
+  } else { area.innerHTML = ''; }
+}
+
+function saveCard() {
+  var name = document.getElementById('card-name').value.trim();
+  var factionId = document.getElementById('card-faction').value;
+  var typeId = document.getElementById('card-type').value;
+  var desc = document.getElementById('card-desc').value.trim();
+  var keywords = document.getElementById('card-keywords').value.trim();
+  if (!name) return toast('请输入卡牌名称', true);
+  if (!typeId) return toast('请选择卡牌类型', true);
+  var type = data.cardTypes.find(function(t) { return t.id === typeId; });
+  var cat = type ? (type.category || 'normal') : 'normal';
+  var card = {
+    id: editCardId || uid(),
+    name: name, factionId: factionId || null, typeId: typeId,
+    desc: desc, keywords: keywords,
+    attack: 0, hp: 0, defense: 0, level: 1, cp: 0,
+    createdAt: editCardId ? ((data.cards.find(function(c) { return c.id === editCardId; }) || {}).createdAt || new Date().toISOString()) : new Date().toISOString()
+  };
+  if (cat === 'combat') {
+    card.attack = parseInt(document.getElementById('card-attack').value) || 0;
+    card.hp = parseInt(document.getElementById('card-hp').value) || 1;
+    card.level = parseInt(document.getElementById('card-level').value) || 1;
+  } else if (cat === 'lord') {
+    card.hp = parseInt(document.getElementById('card-hp').value) || 1;
+    card.defense = parseInt(document.getElementById('card-defense').value) || 0;
+    card.cp = parseInt(document.getElementById('card-cp').value) || 0;
+  }
+  if (editCardId) {
+    var idx = -1;
+    for (var i = 0; i < data.cards.length; i++) { if (data.cards[i].id === editCardId) { idx = i; break; } }
+    if (idx >= 0) data.cards[idx] = card;
+  } else { data.cards.push(card); }
+  save(); closeModal(); renderCards(); renderFactions(); renderTypes();
+  toast(editCardId ? '&#9989; 卡牌已更新' : '&#10024; 卡牌「' + name + '」已创建');
+}
+function deleteCard(id) {
+  var card = data.cards.find(function(c) { return c.id === id; });
+  if (!card) return;
+  if (!confirm('删除卡牌「' + card.name + '」？此操作不可恢复。')) return;
+  data.cards = data.cards.filter(function(c) { return c.id !== id; });
+  save(); renderCards(); renderFactions(); renderTypes();
+  toast('&#128465; 卡牌已删除');
+}
+function closeModal() { document.getElementById('modal-container').innerHTML = ''; editCardId = null; }
+
+function refreshFilters() {
+  var ff = document.getElementById('filter-faction');
+  var ft = document.getElementById('filter-type');
+  var fsv = ff.value, tsv = ft.value;
+  ff.innerHTML = '<option value="">全部阵营</option>' + data.factions.map(function(f) { return '<option value="' + f.id + '">' + esc(f.name) + '</option>'; }).join('');
+  ft.innerHTML = '<option value="">全部类型</option>' + data.cardTypes.map(function(t) { return '<option value="' + t.id + '">' + esc(t.name) + '</option>'; }).join('');
+  ff.value = fsv; ft.value = tsv;
+}
+
+function exportData() {
+  var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'cardgame-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('&#128230; 数据已导出');
+}
+
+function importData(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var imported = JSON.parse(ev.target.result);
+      if (!imported.factions || !imported.cardTypes || !imported.cards) return toast('文件格式不正确', true);
+      if (!confirm('&#128229; 导入将覆盖当前所有数据，确认继续？')) return;
+      data = imported;
+      for (var i = 0; i < data.cardTypes.length; i++) {
+        var t = data.cardTypes[i];
+        if (!t.category) { t.category = t.isCombat ? 'combat' : 'normal'; delete t.isCombat; }
+      }
+      for (var j = 0; j < data.cards.length; j++) {
+        var c = data.cards[j];
+        if (!c.keywords) c.keywords = '';
+        if (c.defense === undefined) c.defense = 0;
+        if (c.level === undefined) c.level = 1;
+        if (c.cp === undefined) c.cp = 0;
+      }
+      save(); renderFactions(); renderTypes(); renderCards(); refreshFilters();
+      toast('&#9989; 数据导入成功！' + data.factions.length + ' 阵营 &middot; ' + data.cardTypes.length + ' 类型 &middot; ' + data.cards.length + ' 卡牌');
+    } catch(err) { toast('&#10060; 文件解析失败', true); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function switchTab(tab) {
+  var tabs = document.querySelectorAll('.tab');
+  for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+  var btns = document.querySelectorAll('nav button');
+  for (var j = 0; j < btns.length; j++) btns[j].classList.remove('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelector('nav button[data-tab="' + tab + '"]').classList.add('active');
+  if (tab === 'sync') updateSyncInfo();
+}
+
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function escAttr(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+load();
+renderFactions();
+renderTypes();
+renderCards();
+refreshFilters();
+checkProtocol();
+updateSyncInfo();
+</script>
+</body>
+</html>
